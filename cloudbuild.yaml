@@ -9,7 +9,8 @@ tags: ['${_PROJECT_ID}', '${_SERVICE_NAME}']
 
 options:
   logging: GCS_ONLY
-logsBucket: gs://multivac-deploy-logging-bucket
+  #logging: CLOUD_LOGGING_ONLY
+logsBucket: gs://multivac-deploy-aitana-logging-bucket
 
 steps:
   - name: '${_ARTIFACT_REGISTRY_REPO_URL}/sunholo-llmops/firebase:${BRANCH_NAME}'
