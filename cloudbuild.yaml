@@ -2,7 +2,7 @@ substitutions:
   _SERVICE_NAME: emissary
   _REGION: terraform_managed
   _BUILD_FOLDER: .
-  _ARTIFACT_REGISTRY_REPO_URL: terraform_managed
+  _ARTIFACT_REGISTRY_REPO_URL_CLIENT: terraform_managed
   _PROJECT_ID: terraform_managed
 
 tags: ['${_PROJECT_ID}', '${_SERVICE_NAME}']
@@ -13,7 +13,7 @@ options:
 logsBucket: gs://multivac-deploy-aitana-logging-bucket
 
 steps:
-  - name: '${_ARTIFACT_REGISTRY_REPO_URL}/sunholo-llmops/firebase:${BRANCH_NAME}'
+  - name: '${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/sunholo-llmops/firebase:${BRANCH_NAME}'
     waitFor: ['-']
     id: 'deploy-firebase-rules'
     entrypoint: bash
@@ -42,7 +42,7 @@ steps:
       - '-c'
       - |
         ARGS=$$(cat /workspace/docker_args)
-        docker build $$ARGS -t ${_ARTIFACT_REGISTRY_REPO_URL}/${_SERVICE_NAME}/ui:${BRANCH_NAME} .
+        docker build $$ARGS -t ${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/${_SERVICE_NAME}/ui:${BRANCH_NAME} .
     waitFor: ['get-firebase-config']
 
   - name: 'gcr.io/cloud-builders/docker'
@@ -78,19 +78,19 @@ steps:
     id: build-backend
     waitFor: ['backend-dockerfile']
     dir: ${_BUILD_FOLDER}/backend
-    args: ['build', '-t', '${_ARTIFACT_REGISTRY_REPO_URL}/${_SERVICE_NAME}/backend:${BRANCH_NAME}', '-f', 'Dockerfile_cloudrun', '.', '--network=cloudbuild']
+    args: ['build', '-t', '${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/${_SERVICE_NAME}/backend:${BRANCH_NAME}', '-f', 'Dockerfile_cloudrun', '.', '--network=cloudbuild']
 
   - name: 'gcr.io/cloud-builders/docker'
     id: push-backend
     waitFor: ['build-backend']
     dir: ${_BUILD_FOLDER}/backend
-    args: ['push', '${_ARTIFACT_REGISTRY_REPO_URL}/${_SERVICE_NAME}/backend:${BRANCH_NAME}']
+    args: ['push', '${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/${_SERVICE_NAME}/backend:${BRANCH_NAME}']
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: push-ui
     waitFor: ['build-ui']
-    args: ['push', '${_ARTIFACT_REGISTRY_REPO_URL}/${_SERVICE_NAME}/ui:${BRANCH_NAME}']
+    args: ['push', '${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/${_SERVICE_NAME}/ui:${BRANCH_NAME}']
   
   # Deploy container image to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -109,12 +109,12 @@ steps:
       - '--add-volume'
       - 'name=gcs_config,type=cloud-storage,bucket=${_CONFIG_BUCKET},readonly=true'
       - '--container=main'
-      - '--image=${_ARTIFACT_REGISTRY_REPO_URL}/${_SERVICE_NAME}/ui:${BRANCH_NAME}'
+      - '--image=${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/${_SERVICE_NAME}/ui:${BRANCH_NAME}'
       - '--port=8080'
       - '--memory=2Gi'
       - '--cpu=1'
       - '--container=sidecar'
-      - '--image=${_ARTIFACT_REGISTRY_REPO_URL}/${_SERVICE_NAME}/backend:${BRANCH_NAME}'
+      - '--image=${_ARTIFACT_REGISTRY_REPO_URL_CLIENT}/${_SERVICE_NAME}/backend:${BRANCH_NAME}'
       - '--add-volume-mount'
       - 'volume=gcs_config,mount-path=/gcs_config'
       - '--memory=2Gi'
